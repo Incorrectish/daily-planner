@@ -1,0 +1,55 @@
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+}
+
+.schedule {
+    width: 100%;
+    border: 1px solid #ccc;
+    padding: 10px;
+}
+
+.header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.time-block {
+    border: 1px solid #000;
+    margin-bottom: 5px;
+    padding: 5px;
+    width: calc(100% - 12px);
+}
+
+.task {
+    background-color: #f0f0f0;
+    border: 1px solid #ddd;
+    margin-top: 5px;
+    padding: 5px;
+    cursor: move;
+    display: flex;
+    align-items: center;
+}
+
+.task input[type="text"] {
+    flex: 1;
+    margin-right: 10px;
+}
+
+button {
+    margin-left: 5px;
+}
+
+.completed {
+    background-color: #c8e6c9; /* Green */
+}
+
+.inProgress {
+    background-color: #fff9c4; /* Yellow */
+}
+
+.unfinished {
+    background-color: #ffcdd2; /* Red */
+}
