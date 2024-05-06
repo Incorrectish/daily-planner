@@ -9,10 +9,13 @@
 <script src="https://code.jquery.com/ui/1.13.1/jquery-ui.min.js"></script>
 </head>
 <body>
+<audio id="startSound" src="start.mp3" preload="auto"></audio>
+<audio id="endSound" src="end.mp3" preload="auto"></audio>
 <div class="schedule">
     <div class="control-buttons">
         <button class="add-block-before">Add Time Block Before</button>
         <button class="add-block-after">Add Time Block After</button>
+        <button onclick="stopSounds()">Stop Sounds</button>
     </div>
 </div>
 

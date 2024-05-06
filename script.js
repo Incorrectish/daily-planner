@@ -1,5 +1,6 @@
 $(document).ready(function() {
     // Initialize sortable and button visibility checks on document ready
+    loadSchedule();
     initSortable();
     checkButtons();
 
@@ -18,6 +19,14 @@ $(document).ready(function() {
         const status = $(this).data('status');
         markStatus(this, status);
     });
+
+    $(document).on('click', '.delete-task', function() {
+        const taskElement = $(this).closest('.task');
+        taskElement.remove(); // Remove the task element from the DOM
+        console.log("hi"); // This should now log in the console
+        saveSchedule(); // Update the schedule after deleting the task
+    });
+
 });
 
 function initSortable() {
@@ -25,7 +34,11 @@ function initSortable() {
     $(".time-block").sortable({
         connectWith: ".time-block",
         items: ".task",
-        placeholder: "task-placeholder"
+        placeholder: "task-placeholder",
+        stop: function(event, ui) {
+            // This event triggers when the dragging stops and the item is dropped
+            saveSchedule(); // Call the save function here
+        }
     }).disableSelection();
 }
 
@@ -102,6 +115,21 @@ function getPrevHour(time) {
     return `${hour.toString().padStart(2, '0')}:${min}`;
 }
 
+
+
+function addTaskToBlock(time, taskName, status) {
+    let block = $('.time-block').filter(function() { return $(this).find('h3').text() === time; });
+    let taskHtml = `<div class="task ${status}" draggable="true">
+                        <input type="text" value="${taskName}" class="task-name">
+                        <button class="delete-task">Delete</button>
+                        <button class="status-btn" data-status="completed">✓</button>
+                        <button class="status-btn" data-status="inProgress">⏳</button>
+                        <button class="status-btn" data-status="unfinished">✗</button>
+                    </div>`;
+    block.append(taskHtml);
+    saveSchedule();
+}
+
 function createTimeBlock(time, prepend = false) {
     const blockHTML = `<div class="time-block">
         <div class="header">
@@ -119,20 +147,88 @@ function createTimeBlock(time, prepend = false) {
         items: ".task",
         placeholder: "task-placeholder"
     }).disableSelection();
+    saveSchedule();
 }
 
 function addTask(element) {
     const block = $(element).closest('.time-block');
-    block.append('<div class="task" draggable="true"><input type="text" value="New Task" class="task-name"><button onclick="deleteTask(this)">Delete</button><button onclick="markStatus(this, \'completed\')">✓</button><button onclick="markStatus(this, \'inProgress\')">⏳</button><button onclick="markStatus(this, \'unfinished\')">✗</button></div>');
+    block.append('<div class="task" draggable="true"><input type="text" value="" class="task-name"><button onclick="deleteTask(this)" class=".delete-task">Delete</button><button onclick="markStatus(this, \'completed\')">✓</button><button onclick="markStatus(this, \'inProgress\')">⏳</button><button onclick="markStatus(this, \'unfinished\')">✗</button></div>');
+    saveSchedule();
 }
 
 function deleteTask(element) {
     const block = $(element).closest('.time-block');
     $(element).parent().remove();
+    console.log("hi")
+    saveSchedule();
 }
 
 function markStatus(element, status) {
     const task = $(element).parent();
     task.removeClass('completed inProgress unfinished').addClass(status);
+    saveSchedule();
 }
 
+function saveSchedule() {
+    let tasks = [];
+    $('.time-block').each(function() {
+        let timeRange = $(this).find('h3').text();
+        let taskData = $(this).find('.task').map(function() {
+            return {
+                name: $(this).find('.task-name').val(),
+                status: $(this).attr('class').split(' ').filter(cls => cls !== 'task')[0] // Assumes status is a class
+            };
+        }).get();
+        tasks.push({ time: timeRange, tasks: taskData });
+    });
+    localStorage.setItem('taskScheduler', JSON.stringify(tasks));
+}
+
+
+function loadSchedule() {
+    let storedTasks = localStorage.getItem('taskScheduler');
+    if (storedTasks) {
+        storedTasks = JSON.parse(storedTasks);
+        storedTasks.forEach(block => {
+            createTimeBlock(block.time, false);
+            block.tasks.forEach(task => {
+                addTaskToBlock(block.time, task.name, task.status);
+            });
+        });
+    }
+}
+
+
+function stopSounds() {
+    document.getElementById('startSound').pause();
+    document.getElementById('startSound').currentTime = 0; // Reset playback position
+    document.getElementById('endSound').pause();
+    document.getElementById('endSound').currentTime = 0; // Reset playback position
+}
+
+function checkAndPlaySound() {
+    console.log("sound")
+    const currentTime = new Date(); // Get the current date and time
+    const currentHours = currentTime.getHours();
+    const currentMinutes = currentTime.getMinutes();
+
+    $('.time-block').each(function() {
+        const timeRange = $(this).find('h3').text(); // e.g., "8:00 - 8:45"
+        const [startTime, endTime] = timeRange.split(' - ');
+        const [startHour, startMinute] = startTime.split(':').map(Number);
+        const [endHour, endMinute] = endTime.split(':').map(Number);
+
+        // Play start sound at the beginning of a time block
+        if (currentHours === startHour && currentMinutes === startMinute) {
+            document.getElementById('startSound').play();
+        }
+
+        // Play end sound at the end of a time block
+        if (currentHours === endHour && currentMinutes === endMinute) {
+            document.getElementById('endSound').play();
+        }
+    });
+}
+
+// Set this function to run every minute
+setInterval(checkAndPlaySound, 60000); // 60000 milliseconds = 1 minute
