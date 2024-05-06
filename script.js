@@ -165,8 +165,15 @@ function deleteTask(element) {
 
 function markStatus(element, status) {
     const task = $(element).parent();
-    task.removeClass('completed inProgress unfinished').addClass(status);
-    saveSchedule();
+    // Check if the task already has the specified status
+    if (task.hasClass(status)) {
+        // If the task already has the status, remove it
+        task.removeClass(status);
+    } else {
+        // Otherwise, remove all potential status classes and add the new one
+        task.removeClass('completed inProgress unfinished').addClass(status);
+    }
+    saveSchedule(); // Save changes to local storage
 }
 
 function saveSchedule() {
@@ -174,16 +181,18 @@ function saveSchedule() {
     $('.time-block').each(function() {
         let timeRange = $(this).find('h3').text();
         let taskData = $(this).find('.task').map(function() {
+            // Fetch all classes and filter out the 'task' class and potentially other non-status classes
+            let allClasses = $(this).attr('class').split(' ');
+            let status = allClasses.filter(cls => cls !== 'task' && cls !== 'otherNonStatusClass').join(' '); // Adjust based on your actual CSS
             return {
                 name: $(this).find('.task-name').val(),
-                status: $(this).attr('class').split(' ').filter(cls => cls !== 'task')[0] // Assumes status is a class
+                status: status // Now stores any remaining classes that could be statuses
             };
         }).get();
         tasks.push({ time: timeRange, tasks: taskData });
     });
     localStorage.setItem('taskScheduler', JSON.stringify(tasks));
 }
-
 
 function loadSchedule() {
     let storedTasks = localStorage.getItem('taskScheduler');
